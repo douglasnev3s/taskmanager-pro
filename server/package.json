@@ -1,0 +1,53 @@
+{
+  "name": "@taskmanager-pro/server",
+  "version": "1.0.0",
+  "description": "TaskManager Pro - Backend API (Express + TypeScript)",
+  "keywords": ["express", "typescript", "mongodb", "mongoose", "rest-api"],
+  "author": "TaskManagerPro Team",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "npx nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json}\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4",
+    "dotenv": "^16.3.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "validator": "^13.11.0",
+    "express-validator": "^7.0.1",
+    "http-status-codes": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/compression": "^1.7.5",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/validator": "^13.11.7",
+    "typescript": "^5.3.2",
+    "nodemon": "^3.0.2",
+    "ts-node": "^10.9.1",
+    "eslint": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "eslint-plugin-import": "^2.29.0",
+    "prettier": "^3.1.0"
+  }
+}
