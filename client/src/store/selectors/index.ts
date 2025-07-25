@@ -1,2 +1,2 @@
-export * from './tasksSelectors';
+export * from './taskSelectors';
 export * from './uiSelectors';

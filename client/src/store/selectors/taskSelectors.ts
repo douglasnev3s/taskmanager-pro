@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 
-import { TaskFilter, TaskPriority } from '@/types';
+import { TaskFilter, TaskStatus, TaskPriority } from '@/types/task';
 
 import { RootState } from '../index';
 
@@ -50,25 +50,23 @@ export const selectFilteredTasks = createSelector(
       );
     }
 
-    // Apply status filter
+    // Apply filters
     switch (filter) {
       case TaskFilter.COMPLETED:
-        return filteredTasks.filter(task => task.completed);
-      
+        return filteredTasks.filter(task => task.status === TaskStatus.COMPLETED);
       case TaskFilter.PENDING:
-        return filteredTasks.filter(task => !task.completed);
+        return filteredTasks.filter(task => task.status !== TaskStatus.COMPLETED);
       
       case TaskFilter.HIGH_PRIORITY:
         return filteredTasks.filter(task => task.priority === TaskPriority.HIGH);
       
       case TaskFilter.OVERDUE:
-        const now = new Date();
-        return filteredTasks.filter(
-          task => 
-            !task.completed && 
-            task.dueDate && 
-            new Date(task.dueDate) < now
-        );
+        return filteredTasks.filter(task => {
+          if (!task.dueDate) return false;
+          const dueDate = new Date(task.dueDate);
+          const now = new Date();
+          return dueDate < now && task.status !== TaskStatus.COMPLETED;
+        });
       
       case TaskFilter.ALL:
       default:
@@ -77,33 +75,21 @@ export const selectFilteredTasks = createSelector(
   }
 );
 
-// Task statistics selectors
-export const selectTaskStats = createSelector(
-  selectAllTasks,
-  (tasks) => {
-    const total = tasks.length;
-    const completed = tasks.filter(task => task.completed).length;
-    const pending = total - completed;
-    const highPriority = tasks.filter(task => task.priority === TaskPriority.HIGH).length;
-    
-    const now = new Date();
-    const overdue = tasks.filter(
-      task => 
-        !task.completed && 
-        task.dueDate && 
-        new Date(task.dueDate) < now
-    ).length;
-
-    return {
-      total,
-      completed,
-      pending,
-      highPriority,
-      overdue,
-      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
-    };
-  }
-);
+export const selectTasksStats = createSelector([selectAllTasks], (tasks) => {
+  return {
+    total: tasks.length,
+    completed: tasks.filter(task => task.status === TaskStatus.COMPLETED).length,
+    inProgress: tasks.filter(task => task.status === TaskStatus.IN_PROGRESS).length,
+    todo: tasks.filter(task => task.status === TaskStatus.TODO).length,
+    highPriority: tasks.filter(task => task.priority === TaskPriority.HIGH).length,
+    overdue: tasks.filter(task => {
+      if (!task.dueDate) return false;
+      const dueDate = new Date(task.dueDate);
+      const now = new Date();
+      return dueDate < now && task.status !== TaskStatus.COMPLETED;
+    }).length,
+  };
+});
 
 // Task by priority selectors
 export const selectTasksByPriority = createSelector(
@@ -136,14 +122,14 @@ export const selectUpcomingTasks = createSelector(
   selectAllTasks,
   (tasks) => {
     const now = new Date();
-    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     
-    return tasks.filter(
-      task => 
-        !task.completed &&
-        task.dueDate &&
-        new Date(task.dueDate) >= now &&
-        new Date(task.dueDate) <= nextWeek
-    );
+    return tasks
+    .filter(task => {
+      if (!task.dueDate || task.status === TaskStatus.COMPLETED) return false;
+      const dueDate = new Date(task.dueDate);
+      return dueDate >= now && dueDate <= threeDaysFromNow;
+    })
+    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
   }
 );
