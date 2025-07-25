@@ -5,6 +5,7 @@ import { Toaster as HotToaster } from 'react-hot-toast';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
+import { MainLayout } from '@/components/layout';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,7 +23,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
-          <div id="root">{children}</div>
+          <MainLayout>
+            {children}
+          </MainLayout>
           <Toaster />
           <HotToaster
             position="top-right"
