@@ -35,7 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 // Health check route
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     message: 'TaskManager Pro API is running!',
@@ -50,9 +50,20 @@ app.get('/api', (req, res) => {
     message: 'TaskManager Pro API',
     version: '1.0.0',
     endpoints: {
-      health: '/health',
+      health: '/api/health',
+      tasks: '/api/tasks',
       api: '/api'
     }
+  });
+});
+
+// Tasks placeholder route
+app.get('/api/tasks', (req, res) => {
+  res.json({
+    message: 'Tasks endpoint - Coming soon!',
+    data: [],
+    total: 0,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -77,5 +88,5 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
 });
