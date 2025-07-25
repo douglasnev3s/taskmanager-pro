@@ -1,19 +1,32 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { persistStore } from 'redux-persist';
+import { persistStore, Persistor } from 'redux-persist';
 
 import { store } from '../index';
-
-// Create persistor
-const persistor = persistStore(store);
 
 interface StoreProviderProps {
   children: React.ReactNode;
 }
 
 export function StoreProvider({ children }: StoreProviderProps) {
+  const [persistor, setPersistor] = useState<Persistor | null>(null);
+
+  useEffect(() => {
+    // Only create persistor on client side
+    if (typeof window !== 'undefined') {
+      const persist = persistStore(store);
+      setPersistor(persist);
+    }
+  }, []);
+
+  // On server side or before persistor is ready, just use Provider without PersistGate
+  if (!persistor) {
+    return <Provider store={store}>{children}</Provider>;
+  }
+
   return (
     <Provider store={store}>
       <PersistGate 
