@@ -4,16 +4,40 @@ export enum TaskPriority {
   HIGH = 'high'
 }
 
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed'
+}
+
 export interface Task {
   id: string;
   title: string;
   description?: string;
-  completed: boolean;
+  status: TaskStatus;
   priority: TaskPriority;
   dueDate?: string;
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateTaskRequest {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  status?: TaskStatus;
+  dueDate?: string;
+  tags?: string[];
+}
+
+export interface UpdateTaskRequest {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  dueDate?: string;
+  tags?: string[];
 }
 
 export interface CreateTaskData {
@@ -28,7 +52,7 @@ export interface UpdateTaskData {
   id: string;
   title?: string;
   description?: string;
-  completed?: boolean;
+  status?: TaskStatus;
   priority?: TaskPriority;
   dueDate?: string;
   tags?: string[];
@@ -48,16 +72,46 @@ export interface TasksState {
   loading: boolean;
   error: string | null;
   searchQuery: string;
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalTasks: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface ApiResponse<T> {
   data: T;
-  message: string;
+  message?: string;
   success: boolean;
+}
+
+export interface TasksResponse {
+  success: boolean;
+  data: {
+    tasks: Task[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalTasks: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  };
+}
+
+export interface TaskResponse {
+  success: boolean;
+  message?: string;
+  data: Task;
 }
 
 export interface ApiError {
   message: string;
-  status: number;
+  status?: number;
+  data?: any;
+  isNetworkError?: boolean;
+  isTimeoutError?: boolean;
   details?: Record<string, any>;
 }

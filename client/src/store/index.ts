@@ -5,6 +5,7 @@ import storage from 'redux-persist/lib/storage';
 
 import tasksReducer from './slices/tasksSlice';
 import uiReducer from './slices/uiSlice';
+import toastMiddleware from './middleware/toastMiddleware';
 
 // Persist configuration
 const persistConfig = {
@@ -36,7 +37,7 @@ export const store = configureStore({
           'persist/PAUSE',
         ],
       },
-    }),
+    }).concat(toastMiddleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 

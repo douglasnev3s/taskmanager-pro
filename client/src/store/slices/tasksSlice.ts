@@ -1,25 +1,47 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
 
-import { Task, TasksState, TaskFilter, CreateTaskData, UpdateTaskData, ApiResponse, ApiError } from '@/types';
+import { 
+  Task, 
+  TasksState, 
+  TaskFilter, 
+  CreateTaskData, 
+  UpdateTaskData, 
+  CreateTaskRequest,
+  UpdateTaskRequest,
+  TasksResponse,
+  ApiError,
+  TaskStatus,
+  TaskPriority
+} from '@/types';
+import { taskApiWithRetry } from '@/lib/api-client';
 
-// API base URL
-const API_BASE_URL = '/api';
+// Fetch tasks parameters interface
+interface FetchTasksParams {
+  page?: number;
+  limit?: number;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  search?: string;
+  sortBy?: 'createdAt' | 'updatedAt' | 'dueDate' | 'priority' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
 
 // Async thunks
 export const fetchTasks = createAsyncThunk<
-  Task[],
-  void,
+  TasksResponse['data'],
+  FetchTasksParams | undefined,
   { rejectValue: ApiError }
->('tasks/fetchTasks', async (_, { rejectWithValue }) => {
+>('tasks/fetchTasks', async (params, { rejectWithValue }) => {
   try {
-    const response = await axios.get<ApiResponse<Task[]>>(`${API_BASE_URL}/tasks`);
-    return response.data.data;
+    const response = await taskApiWithRetry.getTasks(params);
+    return response.data;
   } catch (error: any) {
     return rejectWithValue({
-      message: error.response?.data?.message || 'Failed to fetch tasks',
-      status: error.response?.status || 500,
-      details: error.response?.data,
+      message: error.message || 'Failed to fetch tasks',
+      status: error.status,
+      data: error.data,
+      isNetworkError: error.isNetworkError,
+      isTimeoutError: error.isTimeoutError,
     });
   }
 });
@@ -30,13 +52,24 @@ export const createTask = createAsyncThunk<
   { rejectValue: ApiError }
 >('tasks/createTask', async (taskData, { rejectWithValue }) => {
   try {
-    const response = await axios.post<ApiResponse<Task>>(`${API_BASE_URL}/tasks`, taskData);
-    return response.data.data;
+    const createRequest: CreateTaskRequest = {
+      title: taskData.title,
+      description: taskData.description,
+      priority: taskData.priority,
+      status: TaskStatus.TODO,
+      dueDate: taskData.dueDate,
+      tags: taskData.tags,
+    };
+    
+    const response = await taskApiWithRetry.createTask(createRequest);
+    return response.data;
   } catch (error: any) {
     return rejectWithValue({
-      message: error.response?.data?.message || 'Failed to create task',
-      status: error.response?.status || 500,
-      details: error.response?.data,
+      message: error.message || 'Failed to create task',
+      status: error.status,
+      data: error.data,
+      isNetworkError: error.isNetworkError,
+      isTimeoutError: error.isTimeoutError,
     });
   }
 });
@@ -48,13 +81,17 @@ export const updateTask = createAsyncThunk<
 >('tasks/updateTask', async (taskData, { rejectWithValue }) => {
   try {
     const { id, ...updateData } = taskData;
-    const response = await axios.put<ApiResponse<Task>>(`${API_BASE_URL}/tasks/${id}`, updateData);
-    return response.data.data;
+    const updateRequest: UpdateTaskRequest = updateData;
+    
+    const response = await taskApiWithRetry.updateTask(id, updateRequest);
+    return response.data;
   } catch (error: any) {
     return rejectWithValue({
-      message: error.response?.data?.message || 'Failed to update task',
-      status: error.response?.status || 500,
-      details: error.response?.data,
+      message: error.message || 'Failed to update task',
+      status: error.status,
+      data: error.data,
+      isNetworkError: error.isNetworkError,
+      isTimeoutError: error.isTimeoutError,
     });
   }
 });
@@ -65,13 +102,15 @@ export const deleteTask = createAsyncThunk<
   { rejectValue: ApiError }
 >('tasks/deleteTask', async (taskId, { rejectWithValue }) => {
   try {
-    await axios.delete(`${API_BASE_URL}/tasks/${taskId}`);
+    await taskApiWithRetry.deleteTask(taskId);
     return taskId;
   } catch (error: any) {
     return rejectWithValue({
-      message: error.response?.data?.message || 'Failed to delete task',
-      status: error.response?.status || 500,
-      details: error.response?.data,
+      message: error.message || 'Failed to delete task',
+      status: error.status,
+      data: error.data,
+      isNetworkError: error.isNetworkError,
+      isTimeoutError: error.isTimeoutError,
     });
   }
 });
@@ -83,6 +122,7 @@ const initialState: TasksState = {
   loading: false,
   error: null,
   searchQuery: '',
+  pagination: undefined,
 };
 
 // Tasks slice
@@ -99,7 +139,7 @@ const tasksSlice = createSlice({
     toggleTaskComplete: (state, action: PayloadAction<string>) => {
       const task = state.tasks.find(task => task.id === action.payload);
       if (task) {
-        task.completed = !task.completed;
+        task.status = task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED;
         task.updatedAt = new Date().toISOString();
       }
     },
@@ -124,6 +164,23 @@ const tasksSlice = createSlice({
       state.searchQuery = '';
       state.error = null;
     },
+    // Optimistic updates
+    optimisticUpdateTask: (state, action: PayloadAction<{ id: string; updates: Partial<Task> }>) => {
+      const { id, updates } = action.payload;
+      const task = state.tasks.find(task => task.id === id);
+      if (task) {
+        Object.assign(task, updates);
+        task.updatedAt = new Date().toISOString();
+      }
+    },
+    optimisticDeleteTask: (state, action: PayloadAction<string>) => {
+      const taskId = action.payload;
+      state.tasks = state.tasks.filter(task => task.id !== taskId);
+    },
+    revertOptimisticUpdate: (state, action: PayloadAction<Task[]>) => {
+      // Revert to the previous state if optimistic update fails
+      state.tasks = action.payload;
+    },
   },
   extraReducers: (builder) => {
     // Fetch tasks
@@ -134,7 +191,8 @@ const tasksSlice = createSlice({
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = action.payload;
+        state.tasks = action.payload.tasks;
+        state.pagination = action.payload.pagination;
         state.error = null;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
@@ -204,6 +262,9 @@ export const {
   removeTaskLocal,
   clearError,
   resetTasks,
+  optimisticUpdateTask,
+  optimisticDeleteTask,
+  revertOptimisticUpdate,
 } = tasksSlice.actions;
 
 export default tasksSlice.reducer;

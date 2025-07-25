@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { Toaster as HotToaster } from 'react-hot-toast';
 
 import './globals.css';
 import { Providers } from '@/components/providers';
@@ -23,6 +24,13 @@ export default function RootLayout({
         <Providers>
           <div id="root">{children}</div>
           <Toaster />
+          <HotToaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              className: 'dark:bg-gray-800 dark:text-white',
+            }}
+          />
         </Providers>
       </body>
     </html>
