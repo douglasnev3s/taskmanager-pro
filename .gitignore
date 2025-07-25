@@ -24,6 +24,7 @@ Thumbs.db
 .idea/
 
 # Project specific
+TaskPrompts.md
 CLAUDE.md
 .claude/**
 
