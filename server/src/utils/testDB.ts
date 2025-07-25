@@ -1,5 +1,5 @@
 import { connectDB, disconnectDB, isConnected } from '../config/database';
-import { Task, TaskPriority } from '../models';
+import { Task, TaskPriority, TaskStatus } from '../models/Task';
 
 export const testCRUDOperations = async (): Promise<void> => {
   try {
@@ -50,13 +50,13 @@ export const testCRUDOperations = async (): Promise<void> => {
     console.log('\n✏️ Testing UPDATE operation...');
     if (foundTask) {
       foundTask.title = 'Updated Test Task';
-      foundTask.completed = true;
+      foundTask.status = TaskStatus.COMPLETED;
       foundTask.tags.push('updated');
       
       const updatedTask = await foundTask.save();
       console.log('✅ Task updated:', {
         title: updatedTask.title,
-        completed: updatedTask.completed,
+        status: updatedTask.status,
         tags: updatedTask.tags
       });
 

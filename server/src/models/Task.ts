@@ -6,10 +6,16 @@ export enum TaskPriority {
   HIGH = 'high'
 }
 
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed'
+}
+
 export interface ITask extends Document {
   title: string;
   description?: string;
-  completed: boolean;
+  status: TaskStatus;
   priority: TaskPriority;
   dueDate?: Date;
   tags: string[];
@@ -37,9 +43,14 @@ const TaskSchema = new Schema<ITask>({
     maxlength: [1000, 'Description cannot exceed 1000 characters'],
     default: ''
   },
-  completed: {
-    type: Boolean,
-    default: false,
+  status: {
+    type: String,
+    enum: {
+      values: Object.values(TaskStatus),
+      message: 'Status must be one of: todo, in-progress, completed'
+    },
+    default: TaskStatus.TODO,
+    required: true,
     index: true
   },
   priority: {
@@ -92,7 +103,7 @@ const TaskSchema = new Schema<ITask>({
 });
 
 // Indexes for performance
-TaskSchema.index({ completed: 1, priority: -1 });
+TaskSchema.index({ status: 1, priority: -1 });
 TaskSchema.index({ dueDate: 1 });
 TaskSchema.index({ createdAt: -1 });
 TaskSchema.index({ tags: 1 });
@@ -100,12 +111,12 @@ TaskSchema.index({ title: 'text', description: 'text' });
 
 // Instance methods
 TaskSchema.methods.markComplete = function() {
-  this.completed = true;
+  this.status = TaskStatus.COMPLETED;
   return this.save();
 };
 
 TaskSchema.methods.markIncomplete = function() {
-  this.completed = false;
+  this.status = TaskStatus.TODO;
   return this.save();
 };
 
@@ -128,17 +139,17 @@ TaskSchema.statics.findByPriority = function(priority: TaskPriority) {
 };
 
 TaskSchema.statics.findCompleted = function() {
-  return this.find({ completed: true });
+  return this.find({ status: TaskStatus.COMPLETED });
 };
 
 TaskSchema.statics.findPending = function() {
-  return this.find({ completed: false });
+  return this.find({ status: { $ne: TaskStatus.COMPLETED } });
 };
 
 TaskSchema.statics.findOverdue = function() {
   return this.find({
     dueDate: { $lt: new Date() },
-    completed: false
+    status: { $ne: TaskStatus.COMPLETED }
   });
 };
 
