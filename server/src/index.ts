@@ -6,6 +6,8 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { connectDB } from './config/database';
+import taskRoutes from './routes/tasks';
+import { requestLogger, responseBodyLogger } from './middleware/logging';
 
 dotenv.config();
 
@@ -26,7 +28,8 @@ app.use(cors({
   credentials: true
 }));
 app.use(compression());
-app.use(morgan('combined'));
+app.use(responseBodyLogger);
+app.use(requestLogger);
 app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -57,15 +60,8 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Tasks placeholder route
-app.get('/api/tasks', (req, res) => {
-  res.json({
-    message: 'Tasks endpoint - Coming soon!',
-    data: [],
-    total: 0,
-    timestamp: new Date().toISOString()
-  });
-});
+// Task routes
+app.use('/api/tasks', taskRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
