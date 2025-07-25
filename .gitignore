@@ -9,6 +9,7 @@ client/dist/
 server/dist/
 client/.next/
 client/out/
+*.tsbuildinfo
 
 # Dependencies
 node_modules/
