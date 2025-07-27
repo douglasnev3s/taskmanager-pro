@@ -11,7 +11,10 @@ import {
   TasksResponse,
   ApiError,
   TaskStatus,
-  TaskPriority
+  TaskPriority,
+  AdvancedSearchFilters,
+  SavedSearchPreset,
+  SearchHistoryItem
 } from '@/types';
 import { taskApiWithRetry } from '@/lib/api-client';
 
@@ -115,6 +118,48 @@ export const deleteTask = createAsyncThunk<
   }
 });
 
+// Default saved search presets
+const defaultPresets: SavedSearchPreset[] = [
+  {
+    id: 'today',
+    name: "Today's Tasks",
+    filters: {
+      dueDateRange: {
+        from: new Date(),
+        to: new Date(),
+      },
+    },
+    isDefault: true,
+  },
+  {
+    id: 'this-week',
+    name: 'This Week',
+    filters: {
+      dueDateRange: {
+        from: new Date(),
+        to: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    },
+    isDefault: true,
+  },
+  {
+    id: 'overdue',
+    name: 'Overdue',
+    filters: {
+      isOverdue: true,
+    },
+    isDefault: true,
+  },
+  {
+    id: 'high-priority',
+    name: 'High Priority',
+    filters: {
+      priority: [TaskPriority.HIGH],
+    },
+    isDefault: true,
+  },
+];
+
 // Initial state
 const initialState: TasksState = {
   tasks: [],
@@ -122,6 +167,10 @@ const initialState: TasksState = {
   loading: false,
   error: null,
   searchQuery: '',
+  advancedSearchFilters: {},
+  savedSearchPresets: defaultPresets,
+  searchHistory: [],
+  activeFiltersCount: 0,
   pagination: undefined,
 };
 
@@ -180,6 +229,46 @@ const tasksSlice = createSlice({
     revertOptimisticUpdate: (state, action: PayloadAction<Task[]>) => {
       // Revert to the previous state if optimistic update fails
       state.tasks = action.payload;
+    },
+    // Advanced search actions
+    setAdvancedSearchFilters: (state, action: PayloadAction<AdvancedSearchFilters>) => {
+      state.advancedSearchFilters = action.payload;
+      state.activeFiltersCount = Object.keys(action.payload).filter(key => {
+        const value = action.payload[key as keyof AdvancedSearchFilters];
+        if (Array.isArray(value)) return value.length > 0;
+        return value !== undefined && value !== null && value !== '';
+      }).length;
+    },
+    updateAdvancedSearchFilter: (state, action: PayloadAction<{ key: keyof AdvancedSearchFilters; value: any }>) => {
+      const { key, value } = action.payload;
+      if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
+        delete state.advancedSearchFilters[key];
+      } else {
+        state.advancedSearchFilters[key] = value;
+      }
+      state.activeFiltersCount = Object.keys(state.advancedSearchFilters).filter(filterKey => {
+        const filterValue = state.advancedSearchFilters[filterKey as keyof AdvancedSearchFilters];
+        if (Array.isArray(filterValue)) return filterValue.length > 0;
+        return filterValue !== undefined && filterValue !== null && filterValue !== '';
+      }).length;
+    },
+    clearAdvancedSearchFilters: (state) => {
+      state.advancedSearchFilters = {};
+      state.activeFiltersCount = 0;
+    },
+    addSavedSearchPreset: (state, action: PayloadAction<SavedSearchPreset>) => {
+      state.savedSearchPresets.push(action.payload);
+    },
+    removeSavedSearchPreset: (state, action: PayloadAction<string>) => {
+      state.savedSearchPresets = state.savedSearchPresets.filter(preset => preset.id !== action.payload);
+    },
+    addSearchHistoryItem: (state, action: PayloadAction<SearchHistoryItem>) => {
+      // Add to beginning of array and limit to 10 items
+      state.searchHistory.unshift(action.payload);
+      state.searchHistory = state.searchHistory.slice(0, 10);
+    },
+    clearSearchHistory: (state) => {
+      state.searchHistory = [];
     },
   },
   extraReducers: (builder) => {
@@ -265,6 +354,13 @@ export const {
   optimisticUpdateTask,
   optimisticDeleteTask,
   revertOptimisticUpdate,
+  setAdvancedSearchFilters,
+  updateAdvancedSearchFilter,
+  clearAdvancedSearchFilters,
+  addSavedSearchPreset,
+  removeSavedSearchPreset,
+  addSearchHistoryItem,
+  clearSearchHistory,
 } = tasksSlice.actions;
 
 export default tasksSlice.reducer;

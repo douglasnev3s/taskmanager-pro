@@ -213,13 +213,13 @@ export function TaskControls({
                 <DropdownMenuContent>
                   <DropdownMenuLabel>Set Priority</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onBulkPriorityChange?.('high')}>
+                  <DropdownMenuItem onClick={() => onBulkPriorityChange?.('high' as any)}>
                     High Priority
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onBulkPriorityChange?.('medium')}>
+                  <DropdownMenuItem onClick={() => onBulkPriorityChange?.('medium' as any)}>
                     Medium Priority
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onBulkPriorityChange?.('low')}>
+                  <DropdownMenuItem onClick={() => onBulkPriorityChange?.('low' as any)}>
                     Low Priority
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -66,12 +66,45 @@ export enum TaskFilter {
   OVERDUE = 'overdue'
 }
 
+export interface DateRange {
+  from?: Date;
+  to?: Date;
+}
+
+export interface AdvancedSearchFilters {
+  text?: string;
+  status?: TaskStatus[];
+  priority?: TaskPriority[];
+  tags?: string[];
+  createdDateRange?: DateRange;
+  dueDateRange?: DateRange;
+  isOverdue?: boolean;
+}
+
+export interface SavedSearchPreset {
+  id: string;
+  name: string;
+  filters: AdvancedSearchFilters;
+  isDefault?: boolean;
+}
+
+export interface SearchHistoryItem {
+  id: string;
+  query: string;
+  filters: AdvancedSearchFilters;
+  timestamp: number;
+}
+
 export interface TasksState {
   tasks: Task[];
   filter: TaskFilter;
   loading: boolean;
   error: string | null;
   searchQuery: string;
+  advancedSearchFilters: AdvancedSearchFilters;
+  savedSearchPresets: SavedSearchPreset[];
+  searchHistory: SearchHistoryItem[];
+  activeFiltersCount: number;
   pagination?: {
     currentPage: number;
     totalPages: number;
