@@ -148,3 +148,81 @@ export interface ApiError {
   isTimeoutError?: boolean;
   details?: Record<string, any>;
 }
+
+// Template system types
+export enum TemplateCategory {
+  CAREER = 'career',
+  PERSONAL = 'personal',
+  PROJECT = 'project',
+  LEARNING = 'learning',
+  BUSINESS = 'business',
+  CUSTOM = 'custom'
+}
+
+export interface TemplateTask {
+  title: string;
+  description?: string;
+  priority: TaskPriority;
+  estimatedDuration?: string; // e.g., "2 hours", "1 day"
+  tags?: string[];
+  dependsOn?: number[]; // indices of dependent tasks
+  isOptional?: boolean;
+  defaultDueDate?: {
+    days?: number; // days from template creation
+    relative?: 'start' | 'previous_task'; // relative to template start or previous task completion
+  };
+}
+
+export interface TaskTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: TemplateCategory;
+  tags: string[];
+  tasks: TemplateTask[];
+  isBuiltIn: boolean; // true for predefined templates, false for user-created
+  createdAt: string;
+  updatedAt: string;
+  usageCount?: number;
+  estimatedTotalTime?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  author?: string; // for custom templates
+}
+
+export interface TemplatePreview {
+  template: TaskTemplate;
+  taskCount: number;
+  estimatedDuration: string;
+  categoryColor: string;
+}
+
+export interface CreateTemplateFromTasks {
+  name: string;
+  description: string;
+  category: TemplateCategory;
+  tags: string[];
+  taskIds: string[]; // existing task IDs to convert to template
+}
+
+export interface ApplyTemplateOptions {
+  templateId: string;
+  projectName?: string; // optional project context
+  startDate?: Date; // when to start the template tasks
+  customizations?: {
+    taskOverrides?: { [taskIndex: number]: Partial<TemplateTask> };
+    skipOptional?: boolean;
+    adjustDueDates?: boolean;
+  };
+}
+
+export interface TemplatesState {
+  templates: TaskTemplate[];
+  categories: TemplateCategory[];
+  loading: boolean;
+  error: string | null;
+  selectedTemplate: TaskTemplate | null;
+  showTemplateModal: boolean;
+  showCreateTemplateModal: boolean;
+  popularTemplates: TaskTemplate[];
+  recentlyUsed: TaskTemplate[];
+}

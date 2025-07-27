@@ -7,7 +7,8 @@ import {
   CheckSquare, 
   FolderOpen, 
   Settings, 
-  X 
+  X,
+  FileText
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -28,6 +29,11 @@ const navigation = [
     name: 'All Tasks',
     href: '/tasks',
     icon: CheckSquare,
+  },
+  {
+    name: 'Templates',
+    href: '/templates',
+    icon: FileText,
   },
   {
     name: 'Projects',
