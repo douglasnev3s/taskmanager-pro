@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Task, TaskPriority, TaskStatus } from './TaskCard';
+import { Task, TaskPriority, TaskStatus } from '@/types';
 
 // Zod validation schema
 const taskFormSchema = z.object({
@@ -100,7 +100,7 @@ export function TaskForm({
       description: task?.description || '',
       priority: task?.priority || 'medium',
       status: task?.status || 'todo',
-      dueDate: task?.dueDate,
+      dueDate: task?.dueDate ? new Date(task.dueDate) : undefined,
       tags: task?.tags || [],
     },
   });

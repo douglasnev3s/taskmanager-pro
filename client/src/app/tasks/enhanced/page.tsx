@@ -1,123 +1,72 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { 
   TaskForm, 
   TaskList, 
   KanbanBoard, 
-  TaskControls,
+  EnhancedTaskControls,
   ViewMode,
   FilterType,
   SortType
 } from '@/components/tasks';
 import { Task, TaskStatus, TaskPriority } from '@/types';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { 
+  selectFilteredTasks,
+  selectSearchQuery,
+  selectAdvancedSearchFilters,
+  selectAvailableTags,
+  selectTasksStatistics,
+} from '@/store/selectors/tasksSelectors';
+import { 
+  addTaskLocal,
+  updateTaskLocal,
+  removeTaskLocal,
+  toggleTaskComplete,
+  optimisticUpdateTask,
+} from '@/store/slices/tasksSlice';
 import toast from 'react-hot-toast';
 
-// Extended mock data for testing
-const generateMockTasks = (): Task[] => {
+// Import performance testing for demonstration
+import { quickPerformanceTest, PerformanceTestSuite } from '@/lib/performance-testing';
+
+export default function EnhancedTasksPage() {
+  const dispatch = useAppDispatch();
   
-  const baseTasks = [
-    {
-      title: 'Complete project documentation',
-      description: 'Write comprehensive documentation for the new feature implementation including API endpoints and user guides.',
-      priority: 'high' as TaskPriority,
-      status: 'in-progress' as TaskStatus,
-      dueDate: '2025-07-28',
-      tags: ['documentation', 'urgent'],
-    },
-    {
-      title: 'Review code changes',
-      description: 'Review pull requests from team members and provide feedback on code quality and architecture.',
-      priority: 'medium' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      dueDate: '2025-07-26',
-      tags: ['review', 'code'],
-    },
-    {
-      title: 'Update API endpoints',
-      description: 'Implement new authentication system for better security and user management.',
-      priority: 'high' as TaskPriority,
-      status: 'completed' as TaskStatus,
-      dueDate: '2025-07-20',
-      tags: ['api', 'security', 'backend'],
-    },
-    {
-      title: 'Design system improvements',
-      description: 'Update color palette and component library for better consistency.',
-      priority: 'low' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      tags: ['design', 'ui/ux'],
-    },
-    {
-      title: 'Database optimization',
-      description: 'Optimize database queries for better performance and add necessary indexes.',
-      priority: 'medium' as TaskPriority,
-      status: 'in-progress' as TaskStatus,
-      dueDate: '2025-07-30',
-      tags: ['database', 'performance', 'backend'],
-    },
-    {
-      title: 'Mobile responsiveness fixes',
-      description: 'Fix layout issues on mobile devices and improve touch interactions.',
-      priority: 'medium' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      dueDate: '2025-08-02',
-      tags: ['frontend', 'mobile', 'bug'],
-    },
-    {
-      title: 'User testing session',
-      description: 'Conduct user testing sessions with stakeholders and collect feedback.',
-      priority: 'high' as TaskPriority,
-      status: 'completed' as TaskStatus,
-      dueDate: '2025-07-18',
-      tags: ['testing', 'user-research'],
-    },
-    {
-      title: 'Performance monitoring setup',
-      description: 'Set up performance monitoring tools and alerting systems.',
-      priority: 'low' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      tags: ['monitoring', 'infrastructure'],
-    },
-    {
-      title: 'Security audit',
-      description: 'Perform comprehensive security audit of the application.',
-      priority: 'high' as TaskPriority,
-      status: 'in-progress' as TaskStatus,
-      dueDate: '2025-07-29',
-      tags: ['security', 'audit'],
-    },
-    {
-      title: 'Accessibility improvements',
-      description: 'Implement WCAG 2.1 AA compliance across the application.',
-      priority: 'medium' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      tags: ['accessibility', 'frontend'],
-    },
-  ];
+  // Redux state
+  const filteredTasks = useAppSelector(selectFilteredTasks);
+  const searchQuery = useAppSelector(selectSearchQuery);
+  const advancedFilters = useAppSelector(selectAdvancedSearchFilters);
+  const availableTags = useAppSelector(selectAvailableTags);
+  const statistics = useAppSelector(selectTasksStatistics);
 
-  return baseTasks.map((task, index) => ({
-    id: (index + 1).toString(),
-    ...task,
-    createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last week
-    updatedAt: new Date(Date.now() - Math.random() * 2 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 2 days
-  }));
-};
-
-export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(generateMockTasks());
+  // Local state
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   
   // Control states
-  const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortType>('created');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+
+  // Run performance test on component mount
+  useEffect(() => {
+    // Run a quick performance test in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('=== Advanced Search Performance Test ===');
+      quickPerformanceTest();
+      
+      // Optionally run full test suite (commented out to avoid spamming console)
+      // const testSuite = new PerformanceTestSuite();
+      // testSuite.runStandardTests();
+      // testSuite.printResults();
+    }
+  }, []);
 
   const handleCreateTask = () => {
     setEditingTask(undefined);
@@ -130,7 +79,7 @@ export default function TasksPage() {
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
+    dispatch(removeTaskLocal(taskId));
     setSelectedTasks(prev => {
       const newSet = new Set(prev);
       newSet.delete(taskId);
@@ -148,33 +97,23 @@ export default function TasksPage() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setTasks(prev => [newTask, ...prev]);
+    dispatch(addTaskLocal(newTask));
     toast.success('Task duplicated successfully!');
   };
 
   const handleToggleComplete = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { 
-            ...task, 
-            status: task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED,
-            updatedAt: new Date().toISOString()
-          }
-        : task
-    ));
+    dispatch(toggleTaskComplete(taskId));
     toast.success('Task status updated!');
   };
 
   const handleTaskStatusChange = (taskId: string, newStatus: TaskStatus) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { 
-            ...task, 
-            status: newStatus,
-            updatedAt: new Date().toISOString()
-          }
-        : task
-    ));
+    dispatch(optimisticUpdateTask({
+      id: taskId,
+      updates: {
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+      }
+    }));
     toast.success('Task moved successfully!');
   };
 
@@ -186,15 +125,11 @@ export default function TasksPage() {
     };
 
     if (editingTask) {
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id 
-          ? { 
-              ...task, 
-              ...taskData,
-              updatedAt: new Date().toISOString()
-            }
-          : task
-      ));
+      dispatch(updateTaskLocal({
+        ...editingTask,
+        ...taskData,
+        updatedAt: new Date().toISOString(),
+      }));
       toast.success('Task updated successfully!');
     } else {
       const newTask: Task = {
@@ -203,7 +138,7 @@ export default function TasksPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      setTasks(prev => [newTask, ...prev]);
+      dispatch(addTaskLocal(newTask));
       toast.success('Task created successfully!');
     }
     setIsTaskFormOpen(false);
@@ -223,7 +158,7 @@ export default function TasksPage() {
   };
 
   const handleSelectAll = () => {
-    setSelectedTasks(new Set(tasks.map(task => task.id)));
+    setSelectedTasks(new Set(filteredTasks.map(task => task.id)));
   };
 
   const handleDeselectAll = () => {
@@ -231,27 +166,37 @@ export default function TasksPage() {
   };
 
   const handleBulkDelete = () => {
-    setTasks(tasks.filter(task => !selectedTasks.has(task.id)));
+    selectedTasks.forEach(taskId => {
+      dispatch(removeTaskLocal(taskId));
+    });
     setSelectedTasks(new Set());
     toast.success(`${selectedTasks.size} tasks deleted successfully!`);
   };
 
   const handleBulkComplete = () => {
-    setTasks(tasks.map(task => 
-      selectedTasks.has(task.id)
-        ? { ...task, status: TaskStatus.COMPLETED, updatedAt: new Date().toISOString() }
-        : task
-    ));
+    selectedTasks.forEach(taskId => {
+      dispatch(optimisticUpdateTask({
+        id: taskId,
+        updates: {
+          status: TaskStatus.COMPLETED,
+          updatedAt: new Date().toISOString(),
+        }
+      }));
+    });
     setSelectedTasks(new Set());
     toast.success(`${selectedTasks.size} tasks marked as complete!`);
   };
 
   const handleBulkPriorityChange = (priority: TaskPriority) => {
-    setTasks(tasks.map(task => 
-      selectedTasks.has(task.id)
-        ? { ...task, priority, updatedAt: new Date().toISOString() }
-        : task
-    ));
+    selectedTasks.forEach(taskId => {
+      dispatch(optimisticUpdateTask({
+        id: taskId,
+        updates: {
+          priority,
+          updatedAt: new Date().toISOString(),
+        }
+      }));
+    });
     setSelectedTasks(new Set());
     toast.success(`Priority updated for ${selectedTasks.size} tasks!`);
   };
@@ -263,15 +208,30 @@ export default function TasksPage() {
     }
   };
 
+  const hasActiveAdvancedFilters = Object.keys(advancedFilters).length > 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">All Tasks</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Enhanced Tasks</h1>
           <p className="text-muted-foreground">
-            Manage and organize all your tasks in one place.
+            Advanced search and filtering with performance optimization.
           </p>
+          
+          {/* Statistics */}
+          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+            <span>Total: {statistics.total}</span>
+            <span>Completed: {statistics.completed}</span>
+            <span>In Progress: {statistics.inProgress}</span>
+            <span>Overdue: {statistics.overdue}</span>
+            {hasActiveAdvancedFilters && (
+              <span className="font-medium text-foreground">
+                Filtered: {filteredTasks.length} tasks
+              </span>
+            )}
+          </div>
         </div>
         <Button onClick={handleCreateTask}>
           <Plus className="mr-2 h-4 w-4" />
@@ -279,10 +239,8 @@ export default function TasksPage() {
         </Button>
       </div>
 
-      {/* Controls */}
-      <TaskControls
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+      {/* Enhanced Controls */}
+      <EnhancedTaskControls
         filter={filter}
         onFilterChange={setFilter}
         sortBy={sortBy}
@@ -297,14 +255,14 @@ export default function TasksPage() {
         onBulkPriorityChange={handleBulkPriorityChange}
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
-        totalTasks={tasks.length}
+        totalTasks={filteredTasks.length}
       />
 
       {/* Task Views */}
       <div className="space-y-4">
         {viewMode === 'list' ? (
           <TaskList
-            tasks={tasks}
+            tasks={filteredTasks}
             onToggleComplete={handleToggleComplete}
             onEdit={handleEditTask}
             onDelete={handleDeleteTask}
@@ -316,10 +274,11 @@ export default function TasksPage() {
             selectedTasks={selectedTasks}
             onTaskSelect={handleTaskSelect}
             bulkSelectMode={bulkSelectMode}
+            highlightMatches={true}
           />
         ) : (
           <KanbanBoard
-            tasks={tasks}
+            tasks={filteredTasks}
             onToggleComplete={handleToggleComplete}
             onEdit={handleEditTask}
             onDelete={handleDeleteTask}
@@ -328,6 +287,7 @@ export default function TasksPage() {
             onTaskStatusChange={handleTaskStatusChange}
             searchQuery={searchQuery}
             filter={filter}
+            highlightMatches={true}
           />
         )}
       </div>
@@ -342,6 +302,21 @@ export default function TasksPage() {
         }}
         onSubmit={handleTaskSubmit}
       />
+
+      {/* Development Info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-8 p-4 bg-muted rounded-lg text-sm">
+          <h3 className="font-semibold mb-2">Development Info</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <strong>Available Tags:</strong> {availableTags.join(', ')}
+            </div>
+            <div>
+              <strong>Active Filters:</strong> {Object.keys(advancedFilters).length}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

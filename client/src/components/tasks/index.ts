@@ -4,5 +4,8 @@ export { TaskEmptyState } from './TaskEmptyState';
 export { TaskList } from './TaskList';
 export { KanbanBoard } from './KanbanBoard';
 export { TaskControls } from './TaskControls';
+export { EnhancedTaskControls } from './EnhancedTaskControls';
+export { AdvancedSearch } from './AdvancedSearch';
+export { FilterPills } from './FilterPills';
 export type { Task, TaskPriority, TaskStatus } from './TaskCard';
 export type { ViewMode, FilterType, SortType } from './TaskControls';

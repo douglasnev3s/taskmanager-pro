@@ -24,21 +24,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { HighlightedText } from '@/lib/search-highlight';
+import { Task, TaskPriority, TaskStatus } from '@/types';
 
-export type TaskPriority = 'high' | 'medium' | 'low';
-export type TaskStatus = 'todo' | 'in-progress' | 'completed';
-
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: TaskPriority;
-  status: TaskStatus;
-  dueDate?: Date;
-  tags?: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { Task, TaskPriority, TaskStatus };
 
 interface TaskCardProps {
   task: Task;
@@ -46,6 +35,8 @@ interface TaskCardProps {
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
   onDuplicate?: (task: Task) => void;
+  searchQuery?: string;
+  highlightMatches?: boolean;
 }
 
 const priorityConfig = {
@@ -83,7 +74,9 @@ export function TaskCard({
   onToggleComplete, 
   onEdit, 
   onDelete, 
-  onDuplicate 
+  onDuplicate,
+  searchQuery = '',
+  highlightMatches = false
 }: TaskCardProps) {
   const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
   
@@ -105,7 +98,7 @@ export function TaskCard({
     onDuplicate?.(task);
   };
 
-  const isOverdue = task.dueDate && task.dueDate < new Date() && task.status !== 'completed';
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   return (
     <Card className={cn(
@@ -128,14 +121,22 @@ export function TaskCard({
                 "font-semibold text-sm leading-5 mb-1",
                 isCompleted && "line-through text-muted-foreground"
               )}>
-                {task.title}
+                {highlightMatches && searchQuery ? (
+                  <HighlightedText text={task.title} searchQuery={searchQuery} />
+                ) : (
+                  task.title
+                )}
               </h3>
               {task.description && (
                 <p className={cn(
                   "text-sm text-muted-foreground line-clamp-2",
                   isCompleted && "line-through"
                 )}>
-                  {task.description}
+                  {highlightMatches && searchQuery ? (
+                    <HighlightedText text={task.description} searchQuery={searchQuery} />
+                  ) : (
+                    task.description
+                  )}
                 </p>
               )}
             </div>
@@ -198,7 +199,11 @@ export function TaskCard({
               <>
                 {task.tags.slice(0, 2).map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">
-                    {tag}
+                    {highlightMatches && searchQuery ? (
+                      <HighlightedText text={tag} searchQuery={searchQuery} />
+                    ) : (
+                      tag
+                    )}
                   </Badge>
                 ))}
                 {task.tags.length > 2 && (
@@ -225,7 +230,7 @@ export function TaskCard({
               )}
               <span>
                 {isOverdue ? 'Overdue: ' : 'Due: '}
-                {format(task.dueDate, 'MMM d, yyyy')}
+                {format(new Date(task.dueDate), 'MMM d, yyyy')}
               </span>
             </div>
           )}

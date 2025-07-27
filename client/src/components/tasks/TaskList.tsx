@@ -19,6 +19,7 @@ interface TaskListProps {
   selectedTasks?: Set<string>;
   onTaskSelect?: (taskId: string, selected: boolean) => void;
   bulkSelectMode?: boolean;
+  highlightMatches?: boolean;
 }
 
 interface TaskItemProps {
@@ -33,6 +34,8 @@ interface TaskItemProps {
     selectedTasks?: Set<string>;
     onTaskSelect?: (taskId: string, selected: boolean) => void;
     bulkSelectMode?: boolean;
+    searchQuery?: string;
+    highlightMatches?: boolean;
   };
 }
 
@@ -60,6 +63,8 @@ const TaskItem = ({ index, style, data }: TaskItemProps) => {
           onEdit={data.onEdit}
           onDelete={data.onDelete}
           onDuplicate={data.onDuplicate}
+          searchQuery={data.searchQuery}
+          highlightMatches={data.highlightMatches}
         />
       </div>
     </div>
@@ -79,6 +84,7 @@ export function TaskList({
   selectedTasks = new Set(),
   onTaskSelect,
   bulkSelectMode = false,
+  highlightMatches = false,
 }: TaskListProps) {
   // Filter tasks based on search query and filter
   const filteredTasks = useMemo(() => {
@@ -129,7 +135,7 @@ export function TaskList({
           if (!a.dueDate && !b.dueDate) return 0;
           if (!a.dueDate) return 1;
           if (!b.dueDate) return -1;
-          return a.dueDate.getTime() - b.dueDate.getTime();
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         });
         break;
       case 'priority':
@@ -141,7 +147,7 @@ export function TaskList({
         break;
       case 'created':
       default:
-        sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
     }
 
@@ -172,6 +178,8 @@ export function TaskList({
     selectedTasks,
     onTaskSelect,
     bulkSelectMode,
+    searchQuery,
+    highlightMatches,
   };
 
   // Calculate item height based on bulk select mode

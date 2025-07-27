@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Task, TaskStatus } from './TaskCard';
+import { Task, TaskStatus } from '@/types';
 import { TaskCard } from './TaskCard';
 import { TaskEmptyState } from './TaskEmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ interface KanbanBoardProps {
   onTaskStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
   searchQuery?: string;
   filter?: 'all' | 'completed' | 'pending' | 'high' | 'medium' | 'low';
+  highlightMatches?: boolean;
 }
 
 interface KanbanColumn {
@@ -39,6 +40,7 @@ export function KanbanBoard({
   onTaskStatusChange,
   searchQuery = '',
   filter = 'all',
+  highlightMatches = false,
 }: KanbanBoardProps) {
   // Filter tasks based on search query and filter
   const filteredTasks = useMemo(() => {
@@ -81,25 +83,25 @@ export function KanbanBoard({
 
   // Group tasks by status
   const columns: KanbanColumn[] = useMemo(() => {
-    const todoTasks = filteredTasks.filter(task => task.status === 'todo');
-    const inProgressTasks = filteredTasks.filter(task => task.status === 'in-progress');
-    const completedTasks = filteredTasks.filter(task => task.status === 'completed');
+    const todoTasks = filteredTasks.filter(task => task.status === TaskStatus.TODO);
+    const inProgressTasks = filteredTasks.filter(task => task.status === TaskStatus.IN_PROGRESS);
+    const completedTasks = filteredTasks.filter(task => task.status === TaskStatus.COMPLETED);
 
     return [
       {
-        id: 'todo',
+        id: TaskStatus.TODO,
         title: 'To Do',
         color: 'bg-gray-100 dark:bg-gray-800',
         tasks: todoTasks,
       },
       {
-        id: 'in-progress',
+        id: TaskStatus.IN_PROGRESS,
         title: 'In Progress',
         color: 'bg-blue-100 dark:bg-blue-900/20',
         tasks: inProgressTasks,
       },
       {
-        id: 'completed',
+        id: TaskStatus.COMPLETED,
         title: 'Done',
         color: 'bg-green-100 dark:bg-green-900/20',
         tasks: completedTasks,
@@ -208,6 +210,8 @@ export function KanbanBoard({
                               onEdit={onEdit}
                               onDelete={onDelete}
                               onDuplicate={onDuplicate}
+                              searchQuery={searchQuery}
+                              highlightMatches={highlightMatches}
                             />
                           </div>
                         )}
