@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
+import { useAppDispatch } from '@/store/hooks';
+import { setShowTemplateModal } from '@/store/slices/templatesSlice';
+import { TemplateSelectionModal } from '@/components/templates';
 import { 
   TaskForm, 
   TaskList, 
@@ -107,6 +110,7 @@ const generateMockTasks = (): Task[] => {
 };
 
 export default function TasksPage() {
+  const dispatch = useAppDispatch();
   const [tasks, setTasks] = useState<Task[]>(generateMockTasks());
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
@@ -122,6 +126,10 @@ export default function TasksPage() {
   const handleCreateTask = () => {
     setEditingTask(undefined);
     setIsTaskFormOpen(true);
+  };
+
+  const handleUseTemplate = () => {
+    dispatch(setShowTemplateModal(true));
   };
 
   const handleEditTask = (task: Task) => {
@@ -273,10 +281,16 @@ export default function TasksPage() {
             Manage and organize all your tasks in one place.
           </p>
         </div>
-        <Button onClick={handleCreateTask}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Task
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleUseTemplate}>
+            <FileText className="mr-2 h-4 w-4" />
+            Use Template
+          </Button>
+          <Button onClick={handleCreateTask}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Task
+          </Button>
+        </div>
       </div>
 
       {/* Controls */}
@@ -342,6 +356,9 @@ export default function TasksPage() {
         }}
         onSubmit={handleTaskSubmit}
       />
+
+      {/* Template Selection Modal */}
+      <TemplateSelectionModal />
     </div>
   );
 }
