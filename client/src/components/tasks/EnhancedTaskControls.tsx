@@ -45,6 +45,12 @@ interface EnhancedTaskControlsProps {
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
   totalTasks: number;
+  // Project filtering
+  projectFilter: string;
+  onProjectFilterChange: (projectId: string) => void;
+  // Group by project toggle
+  groupByProject: boolean;
+  onGroupByProjectToggle: () => void;
 }
 
 export function EnhancedTaskControls(props: EnhancedTaskControlsProps) {

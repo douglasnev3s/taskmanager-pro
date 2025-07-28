@@ -15,6 +15,7 @@ import {
   FilterType,
   SortType
 } from '@/components/tasks';
+import { TasksByProject } from '@/components/tasks/TasksByProject';
 import { Task, TaskStatus, TaskPriority } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -29,6 +30,7 @@ const generateMockTasks = (): Task[] => {
       status: 'in-progress' as TaskStatus,
       dueDate: '2025-07-28',
       tags: ['documentation', 'urgent'],
+      projectId: 'proj-1',
     },
     {
       title: 'Review code changes',
@@ -37,6 +39,7 @@ const generateMockTasks = (): Task[] => {
       status: 'todo' as TaskStatus,
       dueDate: '2025-07-26',
       tags: ['review', 'code'],
+      projectId: 'proj-1',
     },
     {
       title: 'Update API endpoints',
@@ -45,6 +48,7 @@ const generateMockTasks = (): Task[] => {
       status: 'completed' as TaskStatus,
       dueDate: '2025-07-20',
       tags: ['api', 'security', 'backend'],
+      projectId: 'proj-1',
     },
     {
       title: 'Design system improvements',
@@ -52,6 +56,7 @@ const generateMockTasks = (): Task[] => {
       priority: 'low' as TaskPriority,
       status: 'todo' as TaskStatus,
       tags: ['design', 'ui/ux'],
+      projectId: 'proj-3',
     },
     {
       title: 'Database optimization',
@@ -68,6 +73,7 @@ const generateMockTasks = (): Task[] => {
       status: 'todo' as TaskStatus,
       dueDate: '2025-08-02',
       tags: ['frontend', 'mobile', 'bug'],
+      projectId: 'proj-3',
     },
     {
       title: 'User testing session',
@@ -76,6 +82,7 @@ const generateMockTasks = (): Task[] => {
       status: 'completed' as TaskStatus,
       dueDate: '2025-07-18',
       tags: ['testing', 'user-research'],
+      projectId: 'proj-2',
     },
     {
       title: 'Performance monitoring setup',
@@ -91,6 +98,7 @@ const generateMockTasks = (): Task[] => {
       status: 'in-progress' as TaskStatus,
       dueDate: '2025-07-29',
       tags: ['security', 'audit'],
+      projectId: 'proj-2',
     },
     {
       title: 'Accessibility improvements',
@@ -98,6 +106,7 @@ const generateMockTasks = (): Task[] => {
       priority: 'medium' as TaskPriority,
       status: 'todo' as TaskStatus,
       tags: ['accessibility', 'frontend'],
+      projectId: 'proj-3',
     },
   ];
 
@@ -122,6 +131,10 @@ export default function TasksPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  
+  // Project filtering and grouping
+  const [projectFilter, setProjectFilter] = useState('all');
+  const [groupByProject, setGroupByProject] = useState(false);
 
   const handleCreateTask = () => {
     setEditingTask(undefined);
@@ -271,6 +284,33 @@ export default function TasksPage() {
     }
   };
 
+  const handleProjectFilterChange = (projectId: string) => {
+    setProjectFilter(projectId);
+  };
+
+  const handleGroupByProjectToggle = () => {
+    setGroupByProject(!groupByProject);
+  };
+
+  // Filter tasks by project
+  const filteredTasks = tasks.filter(task => {
+    if (projectFilter === 'all') return true;
+    if (projectFilter === 'no-project') return !task.projectId;
+    return task.projectId === projectFilter;
+  });
+
+  const handleTaskSelectBool = (taskId: string) => {
+    setSelectedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -311,14 +351,28 @@ export default function TasksPage() {
         onBulkPriorityChange={handleBulkPriorityChange}
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
-        totalTasks={tasks.length}
+        totalTasks={filteredTasks.length}
+        projectFilter={projectFilter}
+        onProjectFilterChange={handleProjectFilterChange}
+        groupByProject={groupByProject}
+        onGroupByProjectToggle={handleGroupByProjectToggle}
       />
 
       {/* Task Views */}
       <div className="space-y-4">
-        {viewMode === 'list' ? (
+        {groupByProject ? (
+          <TasksByProject
+            tasks={filteredTasks}
+            onTaskUpdate={(task) => handleToggleComplete(task.id)}
+            onTaskDelete={handleDeleteTask}
+            onTaskEdit={handleEditTask}
+            bulkSelectMode={bulkSelectMode}
+            selectedTasks={selectedTasks}
+            onTaskSelect={handleTaskSelectBool}
+          />
+        ) : viewMode === 'list' ? (
           <TaskList
-            tasks={tasks}
+            tasks={filteredTasks}
             onToggleComplete={handleToggleComplete}
             onEdit={handleEditTask}
             onDelete={handleDeleteTask}
@@ -333,7 +387,7 @@ export default function TasksPage() {
           />
         ) : (
           <KanbanBoard
-            tasks={tasks}
+            tasks={filteredTasks}
             onToggleComplete={handleToggleComplete}
             onEdit={handleEditTask}
             onDelete={handleDeleteTask}
