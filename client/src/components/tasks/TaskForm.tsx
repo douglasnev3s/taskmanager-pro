@@ -34,6 +34,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Task, TaskPriority, TaskStatus } from '@/types';
+import { useAppSelector } from '@/store/hooks';
+import { selectProjectOptions } from '@/store/selectors';
 
 // Zod validation schema
 const taskFormSchema = z.object({
@@ -52,6 +54,8 @@ const taskFormSchema = z.object({
   }),
   dueDate: z.date().optional(),
   tags: z.array(z.string()).optional(),
+  projectId: z.string().optional(),
+  estimatedHours: z.number().min(0).optional(),
 });
 
 type TaskFormData = z.infer<typeof taskFormSchema>;
@@ -85,6 +89,7 @@ export function TaskForm({
 }: TaskFormProps) {
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>(task?.tags || []);
+  const projectOptions = useAppSelector(selectProjectOptions);
 
   const {
     register,
@@ -102,6 +107,8 @@ export function TaskForm({
       status: task?.status || 'todo',
       dueDate: task?.dueDate ? new Date(task.dueDate) : undefined,
       tags: task?.tags || [],
+      projectId: task?.projectId || '',
+      estimatedHours: task?.estimatedHours || undefined,
     },
   });
 
@@ -239,6 +246,59 @@ export function TaskForm({
               </Select>
               {errors.status && (
                 <p className="text-sm text-red-500">{errors.status.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Project and Estimated Hours Row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Project Field */}
+            <div className="space-y-2">
+              <Label htmlFor="project">Project</Label>
+              <Select
+                value={watch('projectId') || ''}
+                onValueChange={(value) => setValue('projectId', value === 'none' ? '' : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Project</SelectItem>
+                  {projectOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: option.color }}
+                        />
+                        <span>{option.label}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {option.category}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.projectId && (
+                <p className="text-sm text-red-500">{errors.projectId.message}</p>
+              )}
+            </div>
+
+            {/* Estimated Hours Field */}
+            <div className="space-y-2">
+              <Label htmlFor="estimatedHours">Estimated Hours</Label>
+              <Input
+                id="estimatedHours"
+                type="number"
+                min="0"
+                step="0.5"
+                placeholder="e.g., 2.5"
+                {...register('estimatedHours', { valueAsNumber: true })}
+                className={cn(errors.estimatedHours && "border-red-500")}
+              />
+              {errors.estimatedHours && (
+                <p className="text-sm text-red-500">{errors.estimatedHours.message}</p>
               )}
             </div>
           </div>

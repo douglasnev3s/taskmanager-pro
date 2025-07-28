@@ -53,6 +53,10 @@ export default function EnhancedTasksPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  
+  // Project filtering and grouping
+  const [projectFilter, setProjectFilter] = useState('all');
+  const [groupByProject, setGroupByProject] = useState(false);
 
   // Run performance test on component mount
   useEffect(() => {
@@ -208,6 +212,14 @@ export default function EnhancedTasksPage() {
     }
   };
 
+  const handleProjectFilterChange = (projectId: string) => {
+    setProjectFilter(projectId);
+  };
+
+  const handleGroupByProjectToggle = () => {
+    setGroupByProject(!groupByProject);
+  };
+
   const hasActiveAdvancedFilters = Object.keys(advancedFilters).length > 0;
 
   return (
@@ -256,6 +268,10 @@ export default function EnhancedTasksPage() {
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
         totalTasks={filteredTasks.length}
+        projectFilter={projectFilter}
+        onProjectFilterChange={handleProjectFilterChange}
+        groupByProject={groupByProject}
+        onGroupByProjectToggle={handleGroupByProjectToggle}
       />
 
       {/* Task Views */}

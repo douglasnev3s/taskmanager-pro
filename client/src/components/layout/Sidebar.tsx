@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -8,7 +9,10 @@ import {
   FolderOpen, 
   Settings, 
   X,
-  FileText
+  FileText,
+  BarChart3,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -39,6 +43,18 @@ const navigation = [
     name: 'Projects',
     href: '/projects',
     icon: FolderOpen,
+    children: [
+      {
+        name: 'Project Dashboard',
+        href: '/projects/dashboard',
+        icon: BarChart3,
+      },
+      {
+        name: 'All Projects',
+        href: '/projects',
+        icon: FolderOpen,
+      },
+    ],
   },
   {
     name: 'Settings',
@@ -49,6 +65,110 @@ const navigation = [
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [expandedItems, setExpandedItems] = useState<string[]>(['Projects']);
+
+  const toggleExpanded = (itemName: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemName) 
+        ? prev.filter(name => name !== itemName)
+        : [...prev, itemName]
+    );
+  };
+
+  const renderNavigationItem = (item: any, isMobile = false) => {
+    const hasChildren = item.children && item.children.length > 0;
+    const isExpanded = expandedItems.includes(item.name);
+    const isActive = pathname === item.href || (hasChildren && item.children.some((child: any) => pathname === child.href));
+    const isChildActive = hasChildren && item.children.some((child: any) => pathname === child.href);
+
+    return (
+      <li key={item.name}>
+        {hasChildren ? (
+          <>
+            <button
+              onClick={() => toggleExpanded(item.name)}
+              className={cn(
+                'group flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 transition-colors text-left',
+                isChildActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+            >
+              <item.icon
+                className={cn(
+                  'h-6 w-6 shrink-0',
+                  isChildActive 
+                    ? 'text-primary' 
+                    : 'text-muted-foreground group-hover:text-foreground'
+                )}
+                aria-hidden="true"
+              />
+              <span className="flex-1">{item.name}</span>
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </button>
+            {isExpanded && (
+              <ul className="mt-1 ml-8 space-y-1">
+                {item.children.map((child: any) => {
+                  const isChildActiveNow = pathname === child.href;
+                  return (
+                    <li key={child.name}>
+                      <Link
+                        href={child.href}
+                        onClick={isMobile ? onClose : undefined}
+                        className={cn(
+                          'group flex gap-x-3 rounded-md p-2 text-sm font-medium leading-6 transition-colors',
+                          isChildActiveNow
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                      >
+                        <child.icon
+                          className={cn(
+                            'h-5 w-5 shrink-0',
+                            isChildActiveNow 
+                              ? 'text-primary-foreground' 
+                              : 'text-muted-foreground group-hover:text-foreground'
+                          )}
+                          aria-hidden="true"
+                        />
+                        {child.name}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
+        ) : (
+          <Link
+            href={item.href}
+            onClick={isMobile ? onClose : undefined}
+            className={cn(
+              'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 transition-colors',
+              isActive
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <item.icon
+              className={cn(
+                'h-6 w-6 shrink-0',
+                isActive 
+                  ? 'text-primary-foreground' 
+                  : 'text-muted-foreground group-hover:text-foreground'
+              )}
+              aria-hidden="true"
+            />
+            {item.name}
+          </Link>
+        )}
+      </li>
+    );
+  };
 
   return (
     <>
@@ -64,33 +184,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                      <li key={item.name}>
-                        <Link
-                          href={item.href}
-                          className={cn(
-                            'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 transition-colors',
-                            isActive
-                              ? 'bg-primary text-primary-foreground'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                          )}
-                        >
-                          <item.icon
-                            className={cn(
-                              'h-6 w-6 shrink-0',
-                              isActive 
-                                ? 'text-primary-foreground' 
-                                : 'text-muted-foreground group-hover:text-foreground'
-                            )}
-                            aria-hidden="true"
-                          />
-                          {item.name}
-                        </Link>
-                      </li>
-                    );
-                  })}
+                  {navigation.map((item) => renderNavigationItem(item))}
                 </ul>
               </li>
             </ul>
@@ -124,34 +218,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                      <li key={item.name}>
-                        <Link
-                          href={item.href}
-                          onClick={onClose}
-                          className={cn(
-                            'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 transition-colors',
-                            isActive
-                              ? 'bg-primary text-primary-foreground'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                          )}
-                        >
-                          <item.icon
-                            className={cn(
-                              'h-6 w-6 shrink-0',
-                              isActive 
-                                ? 'text-primary-foreground' 
-                                : 'text-muted-foreground group-hover:text-foreground'
-                            )}
-                            aria-hidden="true"
-                          />
-                          {item.name}
-                        </Link>
-                      </li>
-                    );
-                  })}
+                  {navigation.map((item) => renderNavigationItem(item, true))}
                 </ul>
               </li>
             </ul>

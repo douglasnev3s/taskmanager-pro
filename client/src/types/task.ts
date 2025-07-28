@@ -18,6 +18,10 @@ export interface Task {
   priority: TaskPriority;
   dueDate?: string;
   tags: string[];
+  projectId?: string;
+  assigneeId?: string;
+  estimatedHours?: number;
+  actualHours?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +33,9 @@ export interface CreateTaskRequest {
   status?: TaskStatus;
   dueDate?: string;
   tags?: string[];
+  projectId?: string;
+  assigneeId?: string;
+  estimatedHours?: number;
 }
 
 export interface UpdateTaskRequest {
@@ -38,6 +45,10 @@ export interface UpdateTaskRequest {
   priority?: TaskPriority;
   dueDate?: string;
   tags?: string[];
+  projectId?: string;
+  assigneeId?: string;
+  estimatedHours?: number;
+  actualHours?: number;
 }
 
 export interface CreateTaskData {
@@ -46,6 +57,9 @@ export interface CreateTaskData {
   priority: TaskPriority;
   dueDate?: string;
   tags?: string[];
+  projectId?: string;
+  assigneeId?: string;
+  estimatedHours?: number;
 }
 
 export interface UpdateTaskData {
@@ -56,6 +70,10 @@ export interface UpdateTaskData {
   priority?: TaskPriority;
   dueDate?: string;
   tags?: string[];
+  projectId?: string;
+  assigneeId?: string;
+  estimatedHours?: number;
+  actualHours?: number;
 }
 
 export enum TaskFilter {

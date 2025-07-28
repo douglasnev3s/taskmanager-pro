@@ -6,13 +6,14 @@ import storage from '@/lib/storage';
 import tasksReducer from './slices/tasksSlice';
 import uiReducer from './slices/uiSlice';
 import templatesReducer from './slices/templatesSlice';
+import projectsReducer from './slices/projectsSlice';
 import toastMiddleware from './middleware/toastMiddleware';
 
 // Persist configuration
 const persistConfig = {
   key: 'taskmanager-pro',
   storage,
-  whitelist: ['tasks', 'templates'], // Persist tasks and templates, not UI state
+  whitelist: ['tasks', 'templates', 'projects'], // Persist tasks, templates, and projects, not UI state
 };
 
 // Root reducer
@@ -20,6 +21,7 @@ const rootReducer = combineReducers({
   tasks: tasksReducer,
   ui: uiReducer,
   templates: templatesReducer,
+  projects: projectsReducer,
 });
 
 // Persisted reducer

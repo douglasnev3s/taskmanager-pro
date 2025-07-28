@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from 'react';
 import { format } from 'date-fns';
 import { 
   Calendar, 
@@ -78,11 +77,10 @@ export function TaskCard({
   searchQuery = '',
   highlightMatches = false
 }: TaskCardProps) {
-  const [isCompleted, setIsCompleted] = useState(task.status === 'completed');
+  // Derive completion status directly from task prop to avoid hydration issues
+  const isCompleted = task.status === 'completed';
   
   const handleToggleComplete = () => {
-    const newStatus = !isCompleted;
-    setIsCompleted(newStatus);
     onToggleComplete?.(task.id);
   };
 
