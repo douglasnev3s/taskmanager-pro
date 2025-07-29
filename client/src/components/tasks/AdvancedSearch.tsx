@@ -124,17 +124,25 @@ export function AdvancedSearch({
     updateFilter('tags', updated.length > 0 ? updated : undefined);
   };
 
-  const updateDateRange = (type: 'createdDateRange' | 'dueDateRange', range: DateRange) => {
-    updateFilter(type, range.from || range.to ? range : undefined);
+  const updateDateRange = (type: 'createdDateRange' | 'dueDateRange', range: { from?: Date; to?: Date }) => {
+    // Convert Date objects to ISO strings for Redux store
+    const convertedRange = {
+      from: range.from ? range.from.toISOString().split('T')[0] : undefined,
+      to: range.to ? range.to.toISOString().split('T')[0] : undefined,
+    };
+    updateFilter(type, convertedRange.from || convertedRange.to ? convertedRange : undefined);
   };
 
   const formatDateRange = (range?: DateRange) => {
     if (!range?.from && !range?.to) return 'Select date range';
-    if (range.from && range.to) {
-      return `${format(range.from, 'MMM dd, yyyy')} - ${format(range.to, 'MMM dd, yyyy')}`;
+    // Convert ISO strings back to Date objects for formatting
+    const fromDate = range.from ? new Date(range.from) : undefined;
+    const toDate = range.to ? new Date(range.to) : undefined;
+    if (fromDate && toDate) {
+      return `${format(fromDate, 'MMM dd, yyyy')} - ${format(toDate, 'MMM dd, yyyy')}`;
     }
-    if (range.from) return `From ${format(range.from, 'MMM dd, yyyy')}`;
-    if (range.to) return `Until ${format(range.to, 'MMM dd, yyyy')}`;
+    if (fromDate) return `From ${format(fromDate, 'MMM dd, yyyy')}`;
+    if (toDate) return `Until ${format(toDate, 'MMM dd, yyyy')}`;
     return 'Select date range';
   };
 
@@ -362,8 +370,8 @@ export function AdvancedSearch({
                   <CalendarComponent
                     mode="range"
                     selected={{
-                      from: localFilters.createdDateRange?.from,
-                      to: localFilters.createdDateRange?.to,
+                      from: localFilters.createdDateRange?.from ? new Date(localFilters.createdDateRange.from) : undefined,
+                      to: localFilters.createdDateRange?.to ? new Date(localFilters.createdDateRange.to) : undefined,
                     }}
                     onSelect={(range) => updateDateRange('createdDateRange', range || {})}
                     numberOfMonths={2}
@@ -386,8 +394,8 @@ export function AdvancedSearch({
                   <CalendarComponent
                     mode="range"
                     selected={{
-                      from: localFilters.dueDateRange?.from,
-                      to: localFilters.dueDateRange?.to,
+                      from: localFilters.dueDateRange?.from ? new Date(localFilters.dueDateRange.from) : undefined,
+                      to: localFilters.dueDateRange?.to ? new Date(localFilters.dueDateRange.to) : undefined,
                     }}
                     onSelect={(range) => updateDateRange('dueDateRange', range || {})}
                     numberOfMonths={2}

@@ -20,8 +20,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { TaskPriority } from './TaskCard';
-import { useAppSelector } from '@/store/hooks';
-import { selectProjectOptions } from '@/store/selectors';
 
 export type ViewMode = 'list' | 'kanban';
 export type FilterType = 'all' | 'completed' | 'pending' | 'high' | 'medium' | 'low';
@@ -45,12 +43,6 @@ interface TaskControlsProps {
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
   totalTasks: number;
-  // Project filtering
-  projectFilter: string;
-  onProjectFilterChange: (projectId: string) => void;
-  // Group by project toggle
-  groupByProject: boolean;
-  onGroupByProjectToggle: () => void;
 }
 
 export function TaskControls({
@@ -71,12 +63,7 @@ export function TaskControls({
   onSelectAll,
   onDeselectAll,
   totalTasks,
-  projectFilter,
-  onProjectFilterChange,
-  groupByProject,
-  onGroupByProjectToggle,
 }: TaskControlsProps) {
-  const projectOptions = useAppSelector(selectProjectOptions);
   const filterOptions = [
     { value: 'all', label: 'All Tasks' },
     { value: 'pending', label: 'Pending' },
@@ -139,39 +126,10 @@ export function TaskControls({
             </SelectContent>
           </Select>
 
-          {/* Project Filter */}
-          <Select value={projectFilter} onValueChange={onProjectFilterChange}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              <SelectItem value="no-project">No Project</SelectItem>
-              {projectOptions.map(project => (
-                <SelectItem key={project.value} value={project.value}>
-                  <div className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span>{project.label}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* View Mode & Bulk Select */}
         <div className="flex gap-2 items-center">
-          {/* Group by Project Toggle */}
-          <Button
-            variant={groupByProject ? "default" : "outline"}
-            size="sm"
-            onClick={onGroupByProjectToggle}
-          >
-            Group by Project
-          </Button>
 
           {/* Bulk Select Toggle */}
           <Button

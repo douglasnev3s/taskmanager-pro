@@ -67,9 +67,18 @@ const TaskSchema = new Schema<ITask>({
     type: Date,
     validate: {
       validator: function(value: Date) {
-        return !value || value > new Date();
+        if (!value) return true;
+        
+        // Compare only dates, not times
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const dueDate = new Date(value);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        return dueDate >= today;
       },
-      message: 'Due date must be in the future'
+      message: 'Due date must be today or in the future'
     }
   },
   tags: {

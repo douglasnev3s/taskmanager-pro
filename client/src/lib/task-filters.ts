@@ -134,7 +134,7 @@ export function getTaskStatistics(tasks: Task[]) {
 }
 
 export function createTodayTasksFilter(): AdvancedSearchFilters {
-  const today = new Date();
+  const today = new Date().toISOString().split('T')[0];
   return {
     dueDateRange: {
       from: today,
@@ -144,8 +144,8 @@ export function createTodayTasksFilter(): AdvancedSearchFilters {
 }
 
 export function createThisWeekTasksFilter(): AdvancedSearchFilters {
-  const today = new Date();
-  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const today = new Date().toISOString().split('T')[0];
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   return {
     dueDateRange: {
       from: today,

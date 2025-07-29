@@ -1,11 +1,17 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
-import { useAppDispatch } from '@/store/hooks';
-import { setShowTemplateModal } from '@/store/slices/templatesSlice';
-import { TemplateSelectionModal } from '@/components/templates';
+import { Plus } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { 
+  fetchTasks, 
+  createTask, 
+  updateTask, 
+  deleteTask,
+  optimisticUpdateTask,
+  optimisticDeleteTask
+} from '@/store/slices/tasksSlice';
 import { 
   TaskForm, 
   TaskList, 
@@ -15,114 +21,26 @@ import {
   FilterType,
   SortType
 } from '@/components/tasks';
-import { TasksByProject } from '@/components/tasks/TasksByProject';
-import { Task, TaskStatus, TaskPriority } from '@/types';
+import { Task, TaskStatus, TaskPriority, CreateTaskData, UpdateTaskData } from '@/types';
 import toast from 'react-hot-toast';
-
-// Extended mock data for testing
-const generateMockTasks = (): Task[] => {
-  
-  const baseTasks = [
-    {
-      title: 'Complete project documentation',
-      description: 'Write comprehensive documentation for the new feature implementation including API endpoints and user guides.',
-      priority: 'high' as TaskPriority,
-      status: 'in-progress' as TaskStatus,
-      dueDate: '2025-07-28',
-      tags: ['documentation', 'urgent'],
-      projectId: 'proj-1',
-    },
-    {
-      title: 'Review code changes',
-      description: 'Review pull requests from team members and provide feedback on code quality and architecture.',
-      priority: 'medium' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      dueDate: '2025-07-26',
-      tags: ['review', 'code'],
-      projectId: 'proj-1',
-    },
-    {
-      title: 'Update API endpoints',
-      description: 'Implement new authentication system for better security and user management.',
-      priority: 'high' as TaskPriority,
-      status: 'completed' as TaskStatus,
-      dueDate: '2025-07-20',
-      tags: ['api', 'security', 'backend'],
-      projectId: 'proj-1',
-    },
-    {
-      title: 'Design system improvements',
-      description: 'Update color palette and component library for better consistency.',
-      priority: 'low' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      tags: ['design', 'ui/ux'],
-      projectId: 'proj-3',
-    },
-    {
-      title: 'Database optimization',
-      description: 'Optimize database queries for better performance and add necessary indexes.',
-      priority: 'medium' as TaskPriority,
-      status: 'in-progress' as TaskStatus,
-      dueDate: '2025-07-30',
-      tags: ['database', 'performance', 'backend'],
-    },
-    {
-      title: 'Mobile responsiveness fixes',
-      description: 'Fix layout issues on mobile devices and improve touch interactions.',
-      priority: 'medium' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      dueDate: '2025-08-02',
-      tags: ['frontend', 'mobile', 'bug'],
-      projectId: 'proj-3',
-    },
-    {
-      title: 'User testing session',
-      description: 'Conduct user testing sessions with stakeholders and collect feedback.',
-      priority: 'high' as TaskPriority,
-      status: 'completed' as TaskStatus,
-      dueDate: '2025-07-18',
-      tags: ['testing', 'user-research'],
-      projectId: 'proj-2',
-    },
-    {
-      title: 'Performance monitoring setup',
-      description: 'Set up performance monitoring tools and alerting systems.',
-      priority: 'low' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      tags: ['monitoring', 'infrastructure'],
-    },
-    {
-      title: 'Security audit',
-      description: 'Perform comprehensive security audit of the application.',
-      priority: 'high' as TaskPriority,
-      status: 'in-progress' as TaskStatus,
-      dueDate: '2025-07-29',
-      tags: ['security', 'audit'],
-      projectId: 'proj-2',
-    },
-    {
-      title: 'Accessibility improvements',
-      description: 'Implement WCAG 2.1 AA compliance across the application.',
-      priority: 'medium' as TaskPriority,
-      status: 'todo' as TaskStatus,
-      tags: ['accessibility', 'frontend'],
-      projectId: 'proj-3',
-    },
-  ];
-
-  return baseTasks.map((task, index) => ({
-    id: (index + 1).toString(),
-    ...task,
-    createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last week
-    updatedAt: new Date(Date.now() - Math.random() * 2 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 2 days
-  }));
-};
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export default function TasksPage() {
   const dispatch = useAppDispatch();
-  const [tasks, setTasks] = useState<Task[]>(generateMockTasks());
+  
+  // Redux state
+  const { tasks, loading, error } = useAppSelector((state) => state.tasks);
+  
+  // Local state
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  
+  // Load tasks on component mount
+  useEffect(() => {
+    dispatch(fetchTasks());
+  }, [dispatch]);
   
   // Control states
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,18 +50,12 @@ export default function TasksPage() {
   const [bulkSelectMode, setBulkSelectMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   
-  // Project filtering and grouping
-  const [projectFilter, setProjectFilter] = useState('all');
-  const [groupByProject, setGroupByProject] = useState(false);
 
   const handleCreateTask = () => {
     setEditingTask(undefined);
     setIsTaskFormOpen(true);
   };
 
-  const handleUseTemplate = () => {
-    dispatch(setShowTemplateModal(true));
-  };
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -151,84 +63,118 @@ export default function TasksPage() {
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
+    setTaskToDelete(taskId);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+
+    // Optimistic update
+    dispatch(optimisticDeleteTask(taskToDelete));
     setSelectedTasks(prev => {
       const newSet = new Set(prev);
-      newSet.delete(taskId);
+      newSet.delete(taskToDelete);
       return newSet;
     });
-    toast.success('Task deleted successfully!');
+    
+    try {
+      await dispatch(deleteTask(taskToDelete)).unwrap();
+      toast.success('Task deleted successfully!');
+    } catch (error) {
+      // Revert optimistic update
+      dispatch(fetchTasks());
+      toast.error('Failed to delete task');
+    } finally {
+      setTaskToDelete(null);
+      setIsDeleteConfirmOpen(false);
+    }
   };
 
-  const handleDuplicateTask = (task: Task) => {
-    const newTask: Task = {
-      ...task,
-      id: Math.random().toString(36).substr(2, 9),
+  const handleDuplicateTask = async (task: Task) => {
+    const taskData: CreateTaskData = {
       title: `${task.title} (Copy)`,
-      status: TaskStatus.TODO,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      description: task.description,
+      priority: task.priority,
+      dueDate: task.dueDate,
+      tags: task.tags || [],
     };
-    setTasks(prev => [newTask, ...prev]);
-    toast.success('Task duplicated successfully!');
+    
+    try {
+      await dispatch(createTask(taskData)).unwrap();
+      toast.success('Task duplicated successfully!');
+    } catch (error) {
+      toast.error('Failed to duplicate task');
+    }
   };
 
-  const handleToggleComplete = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { 
-            ...task, 
-            status: task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED,
-            updatedAt: new Date().toISOString()
-          }
-        : task
-    ));
-    toast.success('Task status updated!');
+  const handleToggleComplete = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const newStatus = task.status === TaskStatus.COMPLETED ? TaskStatus.TODO : TaskStatus.COMPLETED;
+    
+    // Optimistic update
+    dispatch(optimisticUpdateTask({ id: taskId, updates: { status: newStatus } }));
+    
+    try {
+      await dispatch(updateTask({ id: taskId, status: newStatus })).unwrap();
+      toast.success('Task status updated!');
+    } catch (error) {
+      // Revert optimistic update
+      dispatch(optimisticUpdateTask({ id: taskId, updates: { status: task.status } }));
+      toast.error('Failed to update task status');
+    }
   };
 
-  const handleTaskStatusChange = (taskId: string, newStatus: TaskStatus) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { 
-            ...task, 
-            status: newStatus,
-            updatedAt: new Date().toISOString()
-          }
-        : task
-    ));
-    toast.success('Task moved successfully!');
+  const handleTaskStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    // Optimistic update
+    dispatch(optimisticUpdateTask({ id: taskId, updates: { status: newStatus } }));
+    
+    try {
+      await dispatch(updateTask({ id: taskId, status: newStatus })).unwrap();
+      toast.success('Task moved successfully!');
+    } catch (error) {
+      // Revert optimistic update
+      dispatch(optimisticUpdateTask({ id: taskId, updates: { status: task.status } }));
+      toast.error('Failed to move task');
+    }
   };
 
-  const handleTaskSubmit = (data: any) => {
+  const handleTaskSubmit = async (data: any) => {
     // Convert Date to string for dueDate if it exists
     const taskData = {
       ...data,
-      dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+      dueDate: data.dueDate instanceof Date ? data.dueDate.toISOString() : data.dueDate,
     };
 
-    if (editingTask) {
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id 
-          ? { 
-              ...task, 
-              ...taskData,
-              updatedAt: new Date().toISOString()
-            }
-          : task
-      ));
-      toast.success('Task updated successfully!');
-    } else {
-      const newTask: Task = {
-        id: Math.random().toString(36).substr(2, 9),
-        ...taskData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setTasks(prev => [newTask, ...prev]);
-      toast.success('Task created successfully!');
+    try {
+      if (editingTask) {
+        const updateData: UpdateTaskData = {
+          id: editingTask.id,
+          ...taskData,
+        };
+        await dispatch(updateTask(updateData)).unwrap();
+        toast.success('Task updated successfully!');
+      } else {
+        const createData: CreateTaskData = {
+          title: taskData.title,
+          description: taskData.description,
+          priority: taskData.priority || TaskPriority.MEDIUM,
+          dueDate: taskData.dueDate,
+          tags: taskData.tags || [],
+        };
+        await dispatch(createTask(createData)).unwrap();
+        toast.success('Task created successfully!');
+      }
+      setIsTaskFormOpen(false);
+      setEditingTask(undefined);
+    } catch (error) {
+      toast.error(editingTask ? 'Failed to update task' : 'Failed to create task');
     }
-    setIsTaskFormOpen(false);
-    setEditingTask(undefined);
   };
 
   const handleTaskSelect = (taskId: string, selected: boolean) => {
@@ -251,30 +197,52 @@ export default function TasksPage() {
     setSelectedTasks(new Set());
   };
 
-  const handleBulkDelete = () => {
-    setTasks(tasks.filter(task => !selectedTasks.has(task.id)));
-    setSelectedTasks(new Set());
-    toast.success(`${selectedTasks.size} tasks deleted successfully!`);
+  const handleBulkDelete = async () => {
+    const taskIds = Array.from(selectedTasks);
+    const deletionPromises = taskIds.map(taskId => 
+      dispatch(deleteTask(taskId)).unwrap()
+    );
+    
+    try {
+      await Promise.all(deletionPromises);
+      setSelectedTasks(new Set());
+      toast.success(`${taskIds.length} tasks deleted successfully!`);
+    } catch (error) {
+      toast.error('Failed to delete some tasks');
+      dispatch(fetchTasks()); // Refresh to get accurate state
+    }
   };
 
-  const handleBulkComplete = () => {
-    setTasks(tasks.map(task => 
-      selectedTasks.has(task.id)
-        ? { ...task, status: TaskStatus.COMPLETED, updatedAt: new Date().toISOString() }
-        : task
-    ));
-    setSelectedTasks(new Set());
-    toast.success(`${selectedTasks.size} tasks marked as complete!`);
+  const handleBulkComplete = async () => {
+    const taskIds = Array.from(selectedTasks);
+    const updatePromises = taskIds.map(taskId => 
+      dispatch(updateTask({ id: taskId, status: TaskStatus.COMPLETED })).unwrap()
+    );
+    
+    try {
+      await Promise.all(updatePromises);
+      setSelectedTasks(new Set());
+      toast.success(`${taskIds.length} tasks marked as complete!`);
+    } catch (error) {
+      toast.error('Failed to update some tasks');
+      dispatch(fetchTasks()); // Refresh to get accurate state
+    }
   };
 
-  const handleBulkPriorityChange = (priority: TaskPriority) => {
-    setTasks(tasks.map(task => 
-      selectedTasks.has(task.id)
-        ? { ...task, priority, updatedAt: new Date().toISOString() }
-        : task
-    ));
-    setSelectedTasks(new Set());
-    toast.success(`Priority updated for ${selectedTasks.size} tasks!`);
+  const handleBulkPriorityChange = async (priority: TaskPriority) => {
+    const taskIds = Array.from(selectedTasks);
+    const updatePromises = taskIds.map(taskId => 
+      dispatch(updateTask({ id: taskId, priority })).unwrap()
+    );
+    
+    try {
+      await Promise.all(updatePromises);
+      setSelectedTasks(new Set());
+      toast.success(`Priority updated for ${taskIds.length} tasks!`);
+    } catch (error) {
+      toast.error('Failed to update priority for some tasks');
+      dispatch(fetchTasks()); // Refresh to get accurate state
+    }
   };
 
   const handleBulkSelectModeToggle = () => {
@@ -284,32 +252,55 @@ export default function TasksPage() {
     }
   };
 
-  const handleProjectFilterChange = (projectId: string) => {
-    setProjectFilter(projectId);
-  };
 
-  const handleGroupByProjectToggle = () => {
-    setGroupByProject(!groupByProject);
-  };
+  // Use all tasks (no project filtering)
+  const filteredTasks = tasks;
 
-  // Filter tasks by project
-  const filteredTasks = tasks.filter(task => {
-    if (projectFilter === 'all') return true;
-    if (projectFilter === 'no-project') return !task.projectId;
-    return task.projectId === projectFilter;
-  });
+  // Show loading state
+  if (loading && tasks.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">All Tasks</h1>
+            <p className="text-muted-foreground">Loading your tasks...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">Loading tasks...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const handleTaskSelectBool = (taskId: string) => {
-    setSelectedTasks(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(taskId)) {
-        newSet.delete(taskId);
-      } else {
-        newSet.add(taskId);
-      }
-      return newSet;
-    });
-  };
+  // Show error state
+  if (error && tasks.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">All Tasks</h1>
+            <p className="text-muted-foreground">Failed to load tasks</p>
+          </div>
+          <Button onClick={() => dispatch(fetchTasks())}>
+            Retry
+          </Button>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={() => dispatch(fetchTasks())}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6">
@@ -322,10 +313,6 @@ export default function TasksPage() {
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleUseTemplate}>
-            <FileText className="mr-2 h-4 w-4" />
-            Use Template
-          </Button>
           <Button onClick={handleCreateTask}>
             <Plus className="mr-2 h-4 w-4" />
             New Task
@@ -352,25 +339,11 @@ export default function TasksPage() {
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
         totalTasks={filteredTasks.length}
-        projectFilter={projectFilter}
-        onProjectFilterChange={handleProjectFilterChange}
-        groupByProject={groupByProject}
-        onGroupByProjectToggle={handleGroupByProjectToggle}
       />
 
       {/* Task Views */}
       <div className="space-y-4">
-        {groupByProject ? (
-          <TasksByProject
-            tasks={filteredTasks}
-            onTaskUpdate={(task) => handleToggleComplete(task.id)}
-            onTaskDelete={handleDeleteTask}
-            onTaskEdit={handleEditTask}
-            bulkSelectMode={bulkSelectMode}
-            selectedTasks={selectedTasks}
-            onTaskSelect={handleTaskSelectBool}
-          />
-        ) : viewMode === 'list' ? (
+        {viewMode === 'list' ? (
           <TaskList
             tasks={filteredTasks}
             onToggleComplete={handleToggleComplete}
@@ -411,8 +384,21 @@ export default function TasksPage() {
         onSubmit={handleTaskSubmit}
       />
 
-      {/* Template Selection Modal */}
-      <TemplateSelectionModal />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setTaskToDelete(null);
+        }}
+        onConfirm={confirmDeleteTask}
+        title="Delete Task"
+        description="Are you sure you want to delete this task? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 }
