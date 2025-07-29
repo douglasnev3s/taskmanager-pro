@@ -55,13 +55,14 @@ export const createTask = createAsyncThunk<
   { rejectValue: ApiError }
 >('tasks/createTask', async (taskData, { rejectWithValue }) => {
   try {
+    // Only send fields that the backend supports
     const createRequest: CreateTaskRequest = {
       title: taskData.title,
       description: taskData.description,
       priority: taskData.priority,
       status: TaskStatus.TODO,
       dueDate: taskData.dueDate,
-      tags: taskData.tags,
+      tags: taskData.tags || [],
     };
     
     const response = await taskApiWithRetry.createTask(createRequest);
@@ -118,6 +119,10 @@ export const deleteTask = createAsyncThunk<
   }
 });
 
+// Helper function to get today's date as ISO string
+const getTodayISO = () => new Date().toISOString().split('T')[0];
+const getWeekFromNowISO = () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
 // Default saved search presets
 const defaultPresets: SavedSearchPreset[] = [
   {
@@ -125,8 +130,8 @@ const defaultPresets: SavedSearchPreset[] = [
     name: "Today's Tasks",
     filters: {
       dueDateRange: {
-        from: new Date(),
-        to: new Date(),
+        from: getTodayISO(),
+        to: getTodayISO(),
       },
     },
     isDefault: true,
@@ -136,8 +141,8 @@ const defaultPresets: SavedSearchPreset[] = [
     name: 'This Week',
     filters: {
       dueDateRange: {
-        from: new Date(),
-        to: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        from: getTodayISO(),
+        to: getWeekFromNowISO(),
       },
     },
     isDefault: true,

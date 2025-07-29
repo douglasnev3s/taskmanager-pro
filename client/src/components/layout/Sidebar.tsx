@@ -6,11 +6,7 @@ import Link from 'next/link';
 import { 
   LayoutDashboard, 
   CheckSquare, 
-  FolderOpen, 
-  Settings, 
   X,
-  FileText,
-  BarChart3,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -34,38 +30,11 @@ const navigation = [
     href: '/tasks',
     icon: CheckSquare,
   },
-  {
-    name: 'Templates',
-    href: '/templates',
-    icon: FileText,
-  },
-  {
-    name: 'Projects',
-    href: '/projects',
-    icon: FolderOpen,
-    children: [
-      {
-        name: 'Project Dashboard',
-        href: '/projects/dashboard',
-        icon: BarChart3,
-      },
-      {
-        name: 'All Projects',
-        href: '/projects',
-        icon: FolderOpen,
-      },
-    ],
-  },
-  {
-    name: 'Settings',
-    href: '/settings',
-    icon: Settings,
-  },
 ];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Projects']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 

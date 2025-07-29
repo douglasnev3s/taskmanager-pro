@@ -169,8 +169,8 @@ export class PerformanceTestSuite {
     // Test 5: Date range filtering on large dataset
     this.addTest('Date Range Filtering - Large Dataset', 50000, {
       dueDateRange: {
-        from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       },
     });
 

@@ -34,19 +34,19 @@ export function encodeFiltersToURL(filters: AdvancedSearchFilters): URLSearchPar
 
   if (filters.createdDateRange) {
     if (filters.createdDateRange.from) {
-      params.createdFrom = filters.createdDateRange.from.toISOString();
+      params.createdFrom = filters.createdDateRange.from;
     }
     if (filters.createdDateRange.to) {
-      params.createdTo = filters.createdDateRange.to.toISOString();
+      params.createdTo = filters.createdDateRange.to;
     }
   }
 
   if (filters.dueDateRange) {
     if (filters.dueDateRange.from) {
-      params.dueFrom = filters.dueDateRange.from.toISOString();
+      params.dueFrom = filters.dueDateRange.from;
     }
     if (filters.dueDateRange.to) {
-      params.dueTo = filters.dueDateRange.to.toISOString();
+      params.dueTo = filters.dueDateRange.to;
     }
   }
 
@@ -85,13 +85,13 @@ export function decodeFiltersFromURL(searchParams: URLSearchParams): AdvancedSea
     if (searchParams.createdFrom) {
       const date = new Date(searchParams.createdFrom);
       if (!isNaN(date.getTime())) {
-        filters.createdDateRange.from = date;
+        filters.createdDateRange.from = date.toISOString().split('T')[0];
       }
     }
     if (searchParams.createdTo) {
       const date = new Date(searchParams.createdTo);
       if (!isNaN(date.getTime())) {
-        filters.createdDateRange.to = date;
+        filters.createdDateRange.to = date.toISOString().split('T')[0];
       }
     }
   }
@@ -101,13 +101,13 @@ export function decodeFiltersFromURL(searchParams: URLSearchParams): AdvancedSea
     if (searchParams.dueFrom) {
       const date = new Date(searchParams.dueFrom);
       if (!isNaN(date.getTime())) {
-        filters.dueDateRange.from = date;
+        filters.dueDateRange.from = date.toISOString().split('T')[0];
       }
     }
     if (searchParams.dueTo) {
       const date = new Date(searchParams.dueTo);
       if (!isNaN(date.getTime())) {
-        filters.dueDateRange.to = date;
+        filters.dueDateRange.to = date.toISOString().split('T')[0];
       }
     }
   }
@@ -196,22 +196,22 @@ export function getFilterDescription(filters: AdvancedSearchFilters): string {
   if (filters.createdDateRange) {
     const { from, to } = filters.createdDateRange;
     if (from && to) {
-      descriptions.push(`Created: ${from.toLocaleDateString()} - ${to.toLocaleDateString()}`);
+      descriptions.push(`Created: ${new Date(from).toLocaleDateString()} - ${new Date(to).toLocaleDateString()}`);
     } else if (from) {
-      descriptions.push(`Created after: ${from.toLocaleDateString()}`);
+      descriptions.push(`Created after: ${new Date(from).toLocaleDateString()}`);
     } else if (to) {
-      descriptions.push(`Created before: ${to.toLocaleDateString()}`);
+      descriptions.push(`Created before: ${new Date(to).toLocaleDateString()}`);
     }
   }
 
   if (filters.dueDateRange) {
     const { from, to } = filters.dueDateRange;
     if (from && to) {
-      descriptions.push(`Due: ${from.toLocaleDateString()} - ${to.toLocaleDateString()}`);
+      descriptions.push(`Due: ${new Date(from).toLocaleDateString()} - ${new Date(to).toLocaleDateString()}`);
     } else if (from) {
-      descriptions.push(`Due after: ${from.toLocaleDateString()}`);
+      descriptions.push(`Due after: ${new Date(from).toLocaleDateString()}`);
     } else if (to) {
-      descriptions.push(`Due before: ${to.toLocaleDateString()}`);
+      descriptions.push(`Due before: ${new Date(to).toLocaleDateString()}`);
     }
   }
 
